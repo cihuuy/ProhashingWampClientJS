@@ -15,6 +15,7 @@ let mod = (()=>{
   _miners = [];
   _failures = [];
   _balances = {};
+  _profitability = {};
   function _parseMinerUpdate(minerObj){
     return{
       coin_name:minerObj.coin_name,
@@ -37,6 +38,11 @@ let mod = (()=>{
       _balances[key] = balances[key];
     }
   }
+  function _intialProfitabilityReceived(profitability){
+    for(key in profitability){
+      _profitability[key] = profitability[key];
+    }
+  }
   function _onMinerUpdate(updates){
     updates.forEach((update)=>{
       _replaceMiner(update);
@@ -57,12 +63,19 @@ let mod = (()=>{
     _failures.push(failure);
     _events.emit('minerFailure',failure);
   }
+  function _onProfitabilityUpdate(updates){
+    updates.forEach((update)=>{
+      for(index in update){
+        for(key in update[index]){
+          _profitability[index][key] = update[index][key];
+        }
+      }
+    });
+    _events.emit('profitabilityUpdate',updates);
+  }
   function _replaceMiner(minerObj){
-    // console.log(minerObj);
     for(let i = 0; i < _miners.length; i++){
-      // console.log(_miners[i].uuid);
       if(_miners[i].uuid === minerObj.uuid){
-        //console.log(minerObj);
         for(key in minerObj){
           if(key in _miners[i]){
             _miners[i][key] = minerObj[key];
@@ -81,11 +94,12 @@ let mod = (()=>{
     session.subscribe('found_block_updates',_onBlockUpdate);
     session.call('f_all_miner_updates', [config.api_key]).then(_initialSessionUpdatesReceived);
     session.call('f_all_balance_updates',[config.api_key]).then(_initialBalanceReceived);
+    session.call('f_all_profitability_updates').then(_intialProfitabilityReceived);
     session.subscribe('miner_update_diffs_' + config.api_key,_onMinerUpdate);
     session.subscribe('balance_updates_' + config.api_key,_onBalanceUpdate);
     session.subscribe('mining_failures_' + config.api_key,_onMinerFailure);
-    //TESTS
-    // session.call('f_all_profitability_updates').then(console.log);
+    session.subscribe('profitability_updates',_onProfitabilityUpdate);
+
 
   }
   return {
@@ -99,6 +113,9 @@ let mod = (()=>{
     },
     balances:function(){
       return _balances;
+    },
+    profitability:function(){
+      return _profitability;
     }
   }
 })();

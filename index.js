@@ -14,6 +14,7 @@ function _handleUpdate(data){
 // prohashing.events.on('minerFailure',_handleUpdate);
 //prohashing.events.on('balanceUpdate',_handleUpdate);
 // prohashing.events.on('foundBlock',_handleUpdate);
+
 //Access elements directly
 setInterval(()=>{
   console.clear();
